@@ -12,8 +12,8 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5001;
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -596,4 +596,8 @@ const startServer = (port) => {
 };
 
 // Start the server
-startServer(PORT);
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
+});
