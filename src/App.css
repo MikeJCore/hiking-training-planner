@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.App {
+  @apply min-h-screen flex flex-col;
+}
+
+main {
+  @apply flex-grow bg-gray-100;
+}

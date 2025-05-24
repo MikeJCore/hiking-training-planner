@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: hiking-training-planner-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Add your OpenAI API key in the Render dashboard
+      - key: OPENAI_API_KEY
+        fromService:
+          name: openai-api-key
+          type: env_var
+          property: value
