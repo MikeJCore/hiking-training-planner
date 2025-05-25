@@ -320,14 +320,17 @@ const TrainingPlan = ({
           <div className="mb-4">
             <h3 className="font-semibold mb-2">Recommended Items:</h3>
             <ul className="list-disc pl-5">
-              {plan.equipmentRecommendations.recommended.map((item, index) => (
+              {(plan.equipmentRecommendations?.recommended || []).map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
+              {(plan.equipmentRecommendations?.recommended || []).length === 0 && (
+                <li>No recommended items</li>
+              )}
             </ul>
           </div>
           <div>
             <h3 className="font-semibold mb-2">Acquisition Strategy:</h3>
-            <p>{plan.equipmentRecommendations.progressiveAcquisition}</p>
+            <p>{plan.equipmentRecommendations?.progressiveAcquisition || 'No acquisition strategy provided.'}</p>
           </div>
         </div>
 
