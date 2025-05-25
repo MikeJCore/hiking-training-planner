@@ -338,15 +338,15 @@ const TrainingPlan = ({
           <h2 className="text-2xl font-semibold mb-4">Nutrition Guide</h2>
           <div className="mb-4">
             <h3 className="font-semibold mb-2">During Training:</h3>
-            <p>{plan.nutritionGuidance.training}</p>
+            <p>{plan.nutritionGuidance?.training || 'No specific training nutrition guidance provided.'}</p>
           </div>
           <div className="mb-4">
             <h3 className="font-semibold mb-2">Pre-Climb:</h3>
-            <p>{plan.nutritionGuidance.preclimb}</p>
+            <p>{plan.nutritionGuidance?.preclimb || 'No pre-climb nutrition guidance provided.'}</p>
           </div>
           <div>
             <h3 className="font-semibold mb-2">Day of Climb:</h3>
-            <p>{plan.nutritionGuidance.dayCare}</p>
+            <p>{plan.nutritionGuidance?.dayCare || 'No day-of nutrition guidance provided.'}</p>
           </div>
         </div>
       </div>
