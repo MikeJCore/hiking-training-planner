@@ -2,13 +2,37 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiDownload, FiCalendar, FiShare, FiArrowLeft, FiCheck, FiCopy } from 'react-icons/fi';
 
-const TrainingPlan = ({ plan, userData, onReset }) => {
+const TrainingPlan = ({ 
+  plan = { 
+    weeklyPlans: [],
+    recommendedHikes: [],
+    equipmentRecommendations: { essential: [], recommended: [], progressiveAcquisition: '' },
+    nutritionGuidance: { training: '', preclimb: '', dayCare: '' },
+    personalizedIntro: ''
+  }, 
+  userData = { name: '' }, 
+  onReset = () => {} 
+}) => {
+  // Ensure plan has all required properties with defaults
+  const safePlan = {
+    weeklyPlans: [],
+    recommendedHikes: [],
+    equipmentRecommendations: { essential: [], recommended: [], progressiveAcquisition: '' },
+    nutritionGuidance: { training: '', preclimb: '', dayCare: '' },
+    personalizedIntro: ''
+  };
+
   const [copied, setCopied] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [activeWeek, setActiveWeek] = useState(0);
   
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const title = `My Carrauntoohil Training Plan - ${userData?.name || ''}`.trim();
+  
+  // Safely access nested properties with defaults
+  const weeklyPlans = plan?.weeklyPlans || [];
+  const recommendedHikes = plan?.recommendedHikes || [];
+  const personalizedIntro = plan?.personalizedIntro || 'Your personalized training plan will be generated here.';
   
   const copyPlanLink = () => {
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -227,40 +251,60 @@ const TrainingPlan = ({ plan, userData, onReset }) => {
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-2xl font-semibold mb-4">Overview</h2>
-        <p className="mb-4">{plan.personalizedIntro}</p>
+        <p className="mb-4">{personalizedIntro}</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Weekly Schedule</h2>
-        {plan.weeklyPlans.map((week) => (
-          <div key={week.week} className="mb-6 border-b pb-6">
-            <h3 className="text-xl font-semibold mb-3">Week {week.week}: {week.focus}</h3>
-            <div className="grid gap-4">
-              {week.days.map((day) => (
-                <div key={day.day} className="bg-gray-50 p-4 rounded">
-                  <h4 className="font-semibold">Day {day.day}</h4>
-                  <p className="mb-2">{day.activity}</p>
-                  <p className="text-sm text-gray-600">Duration: {day.duration}</p>
-                  <p className="text-sm text-gray-600">Notes: {day.notes}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Recommended Local Hikes</h2>
-        <div className="grid gap-4">
-          {plan.recommendedHikes.map((hike, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded">
-              <h3 className="font-semibold">{hike.name}</h3>
-              <p>Recommended Week: {hike.recommendedWeek}</p>
-              <p>Preparation: {hike.preparation}</p>
+      {weeklyPlans.length > 0 ? (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Weekly Schedule</h2>
+          {weeklyPlans.map((week = { week: 1, focus: '', days: [] }, weekIndex) => (
+            <div key={week.week || weekIndex} className="mb-6 border-b pb-6">
+              <h3 className="text-xl font-semibold mb-3">
+                Week {week.week || weekIndex + 1}: {week.focus || 'General Training'}
+              </h3>
+              <div className="grid gap-4">
+                {(week.days || []).length > 0 ? (
+                  (week.days || []).map((day = { day: 1, activity: '', duration: '', notes: '' }, dayIndex) => (
+                    <div key={day.day || dayIndex} className="bg-gray-50 p-4 rounded">
+                      <h4 className="font-semibold">Day {day.day || dayIndex + 1}</h4>
+                      <p className="mb-2">{day.activity || 'Rest day'}</p>
+                      {day.duration && <p className="text-sm text-gray-600">Duration: {day.duration}</p>}
+                      {day.notes && <p className="text-sm text-gray-600">Notes: {day.notes}</p>}
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <p className="text-gray-600">No training days scheduled for this week.</p>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
-      </div>
+      ) : (
+        <div className="bg-gray-50 p-4 rounded">
+          <p className="text-gray-600">No weekly plans available. Please check back later or try regenerating your plan.</p>
+        </div>
+      )}
+
+      {recommendedHikes.length > 0 ? (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Recommended Local Hikes</h2>
+          <div className="grid gap-4">
+            {recommendedHikes.map((hike, index) => (
+              <div key={index} className="bg-gray-50 p-4 rounded">
+                <h3 className="font-semibold">{hike.name}</h3>
+                {hike.recommendedWeek && <p>Recommended Week: {hike.recommendedWeek}</p>}
+                {hike.preparation && <p>Preparation: {hike.preparation}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-50 p-4 rounded">
+          <p className="text-gray-600">No recommended hikes available.</p>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -268,7 +312,7 @@ const TrainingPlan = ({ plan, userData, onReset }) => {
           <div className="mb-4">
             <h3 className="font-semibold mb-2">Essential Items:</h3>
             <ul className="list-disc pl-5">
-              {plan.equipmentRecommendations.essential.map((item, index) => (
+              {(plan.equipmentRecommendations?.essential || []).map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
             </ul>
