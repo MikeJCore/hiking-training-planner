@@ -36,8 +36,16 @@ function App() {
         controller.abort();
       }, 120000); // 120 seconds timeout
 
-      const apiUrl = process.env.VITE_API_URL + '/api/generate-plan';
+      // Use the environment variable for the API URL
+      let baseUrl = import.meta.env.VITE_API_URL || 'https://hiking-training-planner.onrender.com';
+      // Remove any surrounding quotes and trim whitespace
+      baseUrl = baseUrl.replace(/^['"]|['"]$/g, '').trim();
+      // Ensure no trailing slash
+      baseUrl = baseUrl.replace(/\/$/, '');
+      const apiUrl = `${baseUrl}/api/generate-plan`;
+      console.log('[GP] Base URL after processing:', baseUrl);
       
+      console.log('[GP] Fetching from:', apiUrl);
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

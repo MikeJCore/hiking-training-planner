@@ -4,14 +4,17 @@ services:
     env: node
     buildCommand: npm install
     startCommand: node server.js
+    plan: free  # or 'starter', 'standard', 'plus' depending on your needs
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      # Add your OpenAI API key in the Render dashboard
-      - key: OPENAI_API_KEY
-        fromService:
-          name: openai-api-key
-          type: env_var
-          property: value
+      - key: NODE_VERSION
+        value: 18  # Match your local Node.js version
+    healthCheckPath: /health
+    autoDeploy: true
+    
+    # Add your OpenAI API key in the Render dashboard's environment variables
+    # Also add VITE_API_URL with your Render URL (e.g., https://hiking-training-planner.onrender.com)
+    # in your frontend deployment's environment variables
