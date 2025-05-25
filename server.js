@@ -245,61 +245,91 @@ if (OPENAI_API_KEY) {
   openai = null;
 }
 
-// Predefined training plans
+// Define predefined plans for fallback
 const predefinedPlans = {
   beginner: {
-    2: {
-      personalizedIntro: "As a beginner hiker, we'll focus on building your endurance and strength gradually. Start with shorter hikes and gradually increase the difficulty.",
+    3: {
+      personalizedIntro: "This is a beginner-friendly training plan to prepare you for Carrauntoohil. We'll focus on building your endurance and strength gradually.",
       weeklyPlans: [
         {
-          week: 1,
-          focus: "Building a foundation",
-          days: [
-            { day: 1, activity: "30-minute walk on flat terrain", duration: "30 minutes", notes: "Focus on maintaining a steady pace" },
-            { day: 2, activity: "Rest day", duration: "-", notes: "Allow your body to recover" },
-            { day: 3, activity: "45-minute walk with light hills", duration: "45 minutes", notes: "Include some elevation if possible" },
-            { day: 4, activity: "Rest day", duration: "-", notes: "Active recovery or complete rest" },
-            { day: 5, activity: "60-minute walk with backpack (5kg)", duration: "60 minutes", notes: "Get used to carrying weight" },
-            { day: 6, activity: "Rest day", duration: "-", notes: "Light stretching or yoga" },
-            { day: 7, activity: "Rest day", duration: "-", notes: "Complete rest" }
+          weekNumber: 1,
+          focus: "Building Base Fitness",
+          workouts: [
+            { day: 1, activity: "30 min brisk walk", duration: "30 minutes", notes: "Focus on good posture and steady breathing" },
+            { day: 3, activity: "45 min walk with hills", duration: "45 minutes", notes: "Find a route with some inclines" },
+            { day: 5, activity: "1 hour easy hike", duration: "1 hour", notes: "Practice on uneven terrain if possible" }
           ]
-        },
-        // Additional weeks would be added here
+        }
       ],
       recommendedHikes: [
-        { name: "Dublin Mountains Way (Partial)", recommendedWeek: 3, preparation: "Start with shorter sections of the trail" },
-        { name: "Howth Cliff Walk", recommendedWeek: 5, preparation: "Good for practicing elevation changes" }
+        { name: "Local Park Trails", recommendedWeek: 2, preparation: "Wear comfortable shoes and bring water" }
       ],
       equipmentRecommendations: {
-        essential: ["Hiking boots with good ankle support", "Weather-appropriate clothing", "Backpack (20-30L)", "Water bottle (2L)"],
-        recommended: ["Hiking poles", "Rain cover for backpack", "First aid kit"],
-        progressiveAcquisition: "Start with essential footwear and clothing, then gradually add other items as you progress."
+        essential: ["Hiking boots with ankle support", "Waterproof jacket", "Backpack (20-30L)", "Water bottle (1-2L)"],
+        recommended: ["Hiking poles", "Moisture-wicking clothing", "First aid kit"]
       },
       nutritionGuidance: {
-        training: "Stay hydrated and eat balanced meals with carbs, protein, and healthy fats.",
-        preclimb: "Eat a carb-rich meal the night before and a light breakfast 2 hours before hiking.",
-        dayCare: "Bring high-energy snacks like nuts, dried fruit, and energy bars."
+        training: "Stay hydrated and eat balanced meals with protein, complex carbs, and healthy fats",
+        preclimb: "Eat a carb-rich meal the night before, hydrate well",
+        dayCare: "Bring high-energy snacks like nuts, dried fruit, and energy bars"
       }
-    },
-    3: {
-      // Similar structure for 3 days/week plan
-      personalizedIntro: "With 3 days per week, we can balance training and recovery effectively. We'll focus on building your hiking-specific fitness.",
-      weeklyPlans: [
-        // Weekly plans would be defined here
-      ]
-    },
-    4: {
-      // 4 days/week plan
-    },
-    5: {
-      // 5+ days/week plan
     }
   },
   intermediate: {
-    // Similar structure for intermediate hikers
+    3: {
+      personalizedIntro: "This is an intermediate training plan to prepare you for Carrauntoohil. We'll build on your existing fitness and prepare you for the challenge.",
+      weeklyPlans: [
+        {
+          weekNumber: 1,
+          focus: "Building Endurance",
+          workouts: [
+            { day: 1, activity: "45 min brisk walk with hills", duration: "45 minutes", notes: "Include some steep sections" },
+            { day: 3, activity: "1 hour hike with elevation gain", duration: "1 hour", notes: "Find a trail with 200-300m elevation gain" },
+            { day: 5, activity: "1.5 hour endurance hike", duration: "1.5 hours", notes: "Maintain a steady pace" }
+          ]
+        }
+      ],
+      recommendedHikes: [
+        { name: "Local Mountain Trails", recommendedWeek: 3, preparation: "Bring proper hiking gear and check weather conditions" }
+      ],
+      equipmentRecommendations: {
+        essential: ["Sturdy hiking boots", "Waterproof layers", "Navigation tools", "Adequate water supply"],
+        recommended: ["Trekking poles", "GPS device", "Emergency shelter"]
+      },
+      nutritionGuidance: {
+        training: "Focus on protein for recovery and complex carbs for energy",
+        preclimb: "Increase carb intake 2-3 days before the hike",
+        dayCare: "Pack high-energy, easily digestible snacks and electrolytes"
+      }
+    }
   },
   advanced: {
-    // Similar structure for advanced hikers
+    3: {
+      personalizedIntro: "This is an advanced training plan to prepare you for Carrauntoohil. We'll focus on building strength and endurance for the challenge ahead.",
+      weeklyPlans: [
+        {
+          weekNumber: 1,
+          focus: "Strength and Endurance",
+          workouts: [
+            { day: 1, activity: "1 hour hill repeats", duration: "1 hour", notes: "Find a steep hill and do 6-8 repeats" },
+            { day: 3, activity: "1.5 hour hike with weighted pack", duration: "1.5 hours", notes: "Carry 10-15% of your body weight" },
+            { day: 5, activity: "2+ hour endurance hike", duration: "2+ hours", notes: "Focus on maintaining a good pace on varied terrain" }
+          ]
+        }
+      ],
+      recommendedHikes: [
+        { name: "Challenging Mountain Routes", recommendedWeek: 2, preparation: "Full gear test, including emergency equipment" }
+      ],
+      equipmentRecommendations: {
+        essential: ["High-quality hiking boots", "All-weather gear", "Emergency supplies", "Navigation tools"],
+        recommended: ["Satellite communicator", "Extra food and water", "Bivvy bag"]
+      },
+      nutritionGuidance: {
+        training: "High-protein recovery meals, complex carbs pre-workout",
+        preclimb: "Carb-loading strategy starting 3 days before",
+        dayCare: "High-energy, easily digestible food, electrolytes, and hydration strategy"
+      }
+    }
   }
 };
 
