@@ -24,17 +24,39 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 // Security headers
 app.use(helmet());
 
-// Enable CORS
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://hiking-training-planner.netlify.app',
-    'https://hiking-training-planner.windsurf.build'
-  ],
+// Enable CORS with dynamic origin
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5001',
+  'https://hiking-training-planner.netlify.app',
+  'https://hiking-training-planner.windsurf.build',
+  'https://hiking-training-planner.netlify.app/',
+  'https://hiking-training-planner.windsurf.build/'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || 
+        allowedOrigins.some(allowedOrigin => origin.endsWith(allowedOrigin.replace(/^https?:\/\//, '')))) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked for origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
