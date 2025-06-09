@@ -25,25 +25,27 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 app.use(helmet());
 
 // Temporarily allow all origins for debugging CORS
-console.log('Attempting to apply permissive CORS middleware...');
+console.log(`[${new Date().toISOString()}] Configuring permissive CORS middleware...`);
 app.use(cors((req, callback) => {
-  const corsOptions = { origin: true, credentials: true }; // Allow all origins
-  console.log(`CORS middleware invoked for origin: ${req.header('Origin')}`);
+  const corsOptions = { origin: true, credentials: true }; // Dynamically allow all origins
+  console.log(`[${new Date().toISOString()}] CORS middleware invoked for: ${req.method} ${req.originalUrl} from origin: ${req.header('Origin')}`);
   callback(null, corsOptions);
 }));
-console.log('Permissive CORS middleware applied.');
+console.log(`[${new Date().toISOString()}] Permissive CORS middleware configured.`);
 
 // Explicitly handle OPTIONS requests for all routes
+console.log(`[${new Date().toISOString()}] Configuring OPTIONS * handler...`);
 app.options('*', (req, res) => {
-  console.log(`OPTIONS request received for path: ${req.path}, from origin: ${req.headers.origin}`);
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*'); // Reflect origin or allow all
+  console.log(`[${new Date().toISOString()}] OPTIONS request received for path: ${req.path}, from origin: ${req.headers.origin}`);
+  // Set CORS headers dynamically based on request or allow all as fallback
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*'); 
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
-  console.log('Responding to OPTIONS request with headers:', res.getHeaders());
+  console.log(`[${new Date().toISOString()}] Responding to OPTIONS request for ${req.path} with headers:`, JSON.stringify(res.getHeaders()));
   res.sendStatus(200);
 });
-console.log('OPTIONS * handler configured.');
+console.log(`[${new Date().toISOString()}] OPTIONS * handler configured.`);
 
 // Log all requests
 app.use((req, res, next) => {
