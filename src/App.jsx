@@ -36,8 +36,8 @@ function App() {
         controller.abort();
       }, 120000); // 120 seconds timeout
 
-      // Use local server URL for development
-      const baseUrl = 'http://localhost:5001';
+      // Use environment variable for API URL with fallback to localhost for development
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const apiUrl = `${baseUrl}/api/generate-plan`;
       console.log('[GP] Using local server URL:', apiUrl);
       

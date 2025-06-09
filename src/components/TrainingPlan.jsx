@@ -47,7 +47,8 @@ const TrainingPlan = ({
   };
   const handleDownloadPDF = async () => {
     try {
-      const response = await fetch('/api/generate-pdf', {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/api/generate-pdf`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +74,8 @@ const TrainingPlan = ({
 
   const handleDownloadCalendar = async () => {
     try {
-      const response = await fetch('/api/generate-calendar', {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/api/generate-calendar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
