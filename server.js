@@ -24,39 +24,62 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 // Security headers
 app.use(helmet());
 
-// Enable CORS with dynamic origin
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5001',
-  'https://hiking-training-planner.netlify.app',
-  'https://hiking-training-planner.windsurf.build',
-  'https://hiking-training-planner.netlify.app/',
-  'https://hiking-training-planner.windsurf.build/'
-];
-
+// Enable CORS with more permissive settings for now
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    // In production, you might want to restrict this to specific origins
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5001',
+      'https://hiking-training-planner.netlify.app',
+      'https://hiking-training-planner.windsurf.build',
+      'https://hiking-training-planner.netlify.app/',
+      'https://hiking-training-planner.windsurf.build/'
+    ];
     
-    if (allowedOrigins.indexOf(origin) !== -1 || 
+    // Allow all origins for now to debug CORS issues
+    // In production, replace with the specific check below
+    callback(null, true);
+    
+    // Production check (commented out for now)
+    /*
+    if (!origin || allowedOrigins.includes(origin) || 
         allowedOrigins.some(allowedOrigin => origin.endsWith(allowedOrigin.replace(/^https?:\/\//, '')))) {
       callback(null, true);
     } else {
       console.log('CORS blocked for origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
+    */
   },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With', 'Accept'],
   credentials: true,
-  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+  optionsSuccessStatus: 200,
+  preflightContinue: true
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests
+// Handle preflight requests for all routes
 app.options('*', cors(corsOptions));
+
+// Add headers before the routes are defined
+app.use(function (req, res, next) {
+  // Allow from any origin for now
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Rate limiting
 const limiter = rateLimit({
