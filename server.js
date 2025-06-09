@@ -24,62 +24,68 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 // Security headers
 app.use(helmet());
 
-// Enable CORS with more permissive settings for now
+// Configure CORS with specific allowed origins
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5001',
+  'https://hiking-training-planner.netlify.app',
+  'https://hiking-training-planner.windsurf.build'
+];
+
 const corsOptions = {
-  origin: function (origin, callback) {
-    // In production, you might want to restrict this to specific origins
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5001',
-      'https://hiking-training-planner.netlify.app',
-      'https://hiking-training-planner.windsurf.build',
-      'https://hiking-training-planner.netlify.app/',
-      'https://hiking-training-planner.windsurf.build/'
-    ];
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
     
-    // Allow all origins for now to debug CORS issues
-    // In production, replace with the specific check below
-    callback(null, true);
-    
-    // Production check (commented out for now)
-    /*
-    if (!origin || allowedOrigins.includes(origin) || 
-        allowedOrigins.some(allowedOrigin => origin.endsWith(allowedOrigin.replace(/^https?:\/\//, '')))) {
+    // Check if the origin is in the allowed list or is a subdomain of an allowed origin
+    const isAllowed = allowedOrigins.some(allowedOrigin => 
+      origin === allowedOrigin || 
+      origin.startsWith(allowedOrigin.replace(/https?:\/\//, 'http://')) ||
+      origin.startsWith(allowedOrigin.replace(/https?:\/\//, 'https://'))
+    );
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       console.log('CORS blocked for origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
-    */
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With', 'Accept'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
-  optionsSuccessStatus: 200,
-  preflightContinue: true
+  optionsSuccessStatus: 200
 };
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests for all routes
+// Handle preflight requests
 app.options('*', cors(corsOptions));
 
-// Add headers before the routes are defined
-app.use(function (req, res, next) {
-  // Allow from any origin for now
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   next();
 });
+
+// Parse JSON bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the dist directory if it exists
+const distPath = path.join(__dirname, 'dist');
+
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath, {
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+    }
+  }));
+  console.log('Serving static files from:', distPath);
+} else {
+  console.log('No dist directory found, static file serving disabled');
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -749,28 +755,29 @@ process.on('unhandledRejection', (error) => {
   console.error('Unhandled Promise Rejection:', error);
 });
 
-// Function to start server
+// Start the server
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+
+// Function to start server with port handling
 const startServer = (port) => {
-  const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server is running on port ${port}`);
+  const server = app.listen(port, HOST, () => {
+    console.log(`Server is running on http://${HOST}:${port}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       console.log(`Port ${port} is in use, trying port ${parseInt(port) + 1}...`);
       startServer(parseInt(port) + 1);
     } else {
       console.error('Server error:', err);
+      process.exit(1);
     }
   });
+  
+  return server;
 };
 
 // Start the server
-const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
-
-// Add error handling for the server
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Server is running on http://${HOST}:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+const server = startServer(PORT);
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
