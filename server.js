@@ -24,44 +24,16 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 // Security headers
 app.use(helmet());
 
-// Configure CORS with specific allowed origins
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5001',
-  'https://hiking-training-planner.netlify.app',
-  'https://hiking-training-planner.windsurf.build'
-];
+// Temporarily allow all origins for debugging CORS
+app.use(cors());
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Check if the origin is in the allowed list or is a subdomain of an allowed origin
-    const isAllowed = allowedOrigins.some(allowedOrigin => 
-      origin === allowedOrigin || 
-      origin.startsWith(allowedOrigin.replace(/https?:\/\//, 'http://')) ||
-      origin.startsWith(allowedOrigin.replace(/https?:\/\//, 'https://'))
-    );
-
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-
-// Apply CORS middleware
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// Explicitly handle OPTIONS requests for all routes
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.sendStatus(200);
+});
 
 // Log all requests
 app.use((req, res, next) => {
