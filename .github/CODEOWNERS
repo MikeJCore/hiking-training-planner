@@ -1,0 +1,14 @@
+# Default owners for everything in the repo
+*       @MikeJCore
+
+# Frontend code owners
+/src/**/*.jsx    @MikeJCore @frontend-team
+/src/**/*.css    @MikeJCore @frontend-team
+
+# Backend code owners
+/server.js       @MikeJCore @backend-team
+/package.json    @MikeJCore @backend-team
+
+# Documentation
+/README.md       @MikeJCore @docs-team
+/LICENSE         @MikeJCore

@@ -34,7 +34,51 @@ export default defineConfig(({ command, mode }) => {
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
-      sourcemap: true
-    }
+      emptyOutDir: true,
+      // Enable CSS code splitting
+      cssCodeSplit: true,
+      // Generate manifest.json for PWA
+      manifest: true,
+      // Output directory for assets (relative to outDir)
+      assetsInlineLimit: 4096, // 4kb
+      // Minify CSS and JS
+      minify: isProduction ? 'esbuild' : false,
+      // Source maps
+      sourcemap: isProduction ? 'hidden' : true,
+      // Chunk size warning limit (in kbs)
+      chunkSizeWarningLimit: 1000,
+      // Rollup options
+      rollupOptions: {
+        output: {
+          // Split chunks
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              // Split node_modules into vendor chunks
+              const module = id.toString().split('node_modules/')[1].split('/')[0];
+              return `vendor-${module}`;
+            }
+          },
+          // Entry file names
+          entryFileNames: 'assets/js/[name]-[hash].js',
+          // Chunk file names
+          chunkFileNames: 'assets/js/[name]-[hash].js',
+          // Asset file names
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name.split('.');
+            const ext = info[info.length - 1];
+            if (/\\.(png|jpe?g|svg|gif|webp|avif)$/i.test(assetInfo.name)) {
+              return `assets/images/[name]-[hash][extname]`;
+            }
+            if (/\\.(woff|woff2|eot|ttf|otf)$/i.test(assetInfo.name)) {
+              return `assets/fonts/[name]-[hash][extname]`;
+            }
+            if (/\\.css$/i.test(assetInfo.name)) {
+              return `assets/css/[name]-[hash][extname]`;
+            }
+            return `assets/[name]-[hash][extname]`;
+          },
+        },
+      },
+    },
   };
 });

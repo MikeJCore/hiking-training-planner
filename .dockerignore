@@ -1,30 +1,17 @@
-# Dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Node modules
+node_modules
+npm-debug.log
 
-# Testing
-/coverage
-
-# Production
+# Build output
 /dist
 /build
 
-# Environment files
+# Environment variables
 .env
-.env.*.local
+.env.*
 !.env.example
 
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Editor directories and files
+# IDE and editor files
 .idea
 .vscode
 *.suo
@@ -42,15 +29,28 @@ lerna-debug.log*
 ehthumbs.db
 Thumbs.db
 
-# Netlify
-.netlify/
+# Testing
+/coverage
 
-# Render
-.render/
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Local development
 .cache/
 .temp/
+
+# Docker
+Dockerfile
+.dockerignore
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Documentation
+/docs
 
 # Optional npm cache directory
 .npm
@@ -68,7 +68,6 @@ Thumbs.db
 .yarn-integrity
 
 # dotenv environment variables file
-.env
 .env.test
 .env.production
 
@@ -84,15 +83,3 @@ out
 
 # Vite
 *.local
-
-# Debug logs from npm
-npm-debug.log*
-
-# Local development
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Local Netlify folder
-.netlify

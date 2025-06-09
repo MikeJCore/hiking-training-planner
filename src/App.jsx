@@ -36,23 +36,27 @@ function App() {
         controller.abort();
       }, 120000); // 120 seconds timeout
 
-      // Use the environment variable for the API URL
-      let baseUrl = import.meta.env.VITE_API_URL || 'https://hiking-training-planner.onrender.com';
-      // Remove any surrounding quotes and trim whitespace
-      baseUrl = baseUrl.replace(/^['"]|['"]$/g, '').trim();
-      // Ensure no trailing slash
-      baseUrl = baseUrl.replace(/\/$/, '');
+      // Use local server URL for development
+      const baseUrl = 'http://localhost:5001';
       const apiUrl = `${baseUrl}/api/generate-plan`;
-      console.log('[GP] Base URL after processing:', baseUrl);
+      console.log('[GP] Using local server URL:', apiUrl);
       
-      console.log('[GP] Fetching from:', apiUrl);
+      console.log('[GP] Sending request to:', apiUrl);
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
-        signal: controller.signal // Pass the abort signal to fetch
+        body: JSON.stringify({
+          fitnessLevel: formData.fitnessLevel,
+          hikingExperience: formData.hikingExperience,
+          county: formData.county,
+          targetDate: formData.targetDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 30 days from now
+          daysPerWeek: parseInt(formData.daysPerWeek) || 3,
+          email: formData.email || 'user@example.com',
+          name: formData.name
+        }),
+        signal: controller.signal
       });
 
       clearTimeout(timeoutId); // Clear the timeout if fetch completes/errors in time

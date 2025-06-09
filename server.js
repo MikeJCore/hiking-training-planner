@@ -1,6 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import OpenAI from 'openai';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
@@ -8,13 +12,87 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import ics from 'ics';
 import dotenv from 'dotenv';
+import { StatusCodes } from 'http-status-codes';
 
 // Load environment variables
 dotenv.config();
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 10000; // Default to Render's port
+
+// Security headers
+app.use(helmet());
+
+// Enable CORS
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://hiking-training-planner.netlify.app',
+    'https://hiking-training-planner.windsurf.build'
+  ],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(limiter);
+
+// Compression
+app.use(compression());
+
+// Logging
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('dev'));
+}
+
+// Body parser with increased limit for large JSON payloads
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(StatusCodes.OK).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    nodeVersion: process.version
+  });
+});
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  const __dirname = path.resolve();
+  app.use(express.static(path.join(__dirname, 'dist')));
+  
+  // Handle SPA (Single Page Application)
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+  });
+}
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  
+  const statusCode = err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+  const message = process.env.NODE_ENV === 'production' && statusCode >= 500
+    ? 'Something went wrong!'
+    : err.message;
+  
+  res.status(statusCode).json({
+    success: false,
+    message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+  });
+});
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -221,6 +299,7 @@ if (OPENAI_API_KEY) {
     console.log('Initializing OpenAI with model:', DEFAULT_MODEL);
     openai = new OpenAI({
       apiKey: OPENAI_API_KEY,
+      timeout: 30000, // 30 seconds
       defaultHeaders: {
         'OpenAI-Model': DEFAULT_MODEL,
         'Content-Type': 'application/json'
@@ -354,15 +433,16 @@ app.post('/api/generate-plan', async (req, res) => {
       county, 
       daysPerWeek, 
       name, 
-      ageGroup,
       model = DEFAULT_MODEL // Default to environment's default model
     } = req.body;
     
     // If OpenAI is not available, use the fallback plan
     if (!openai) {
-      console.log('Using fallback plan as OpenAI is not available');
-      const fallbackPlan = generateFallbackPlan(fitnessLevel, daysPerWeek);
-      return res.json(fallbackPlan);
+      console.error('OpenAI API client not initialized. Cannot generate plan.');
+      return res.status(503).json({ 
+        success: false, 
+        error: 'OpenAI API client not initialized. Please check server logs and API key configuration.' 
+      });
     }
     
     // If we have OpenAI, proceed with generating a plan using the API
@@ -384,7 +464,6 @@ app.post('/api/generate-plan', async (req, res) => {
       
       USER DETAILS:
       - Name: ${name || 'Anonymous'}
-      - Age Group: ${ageGroup}
       - Fitness Level: ${fitnessLevel}
       - Hiking Experience: ${hikingExperience}
       - Located in: County ${county}, Ireland
@@ -506,8 +585,12 @@ app.post('/api/generate-plan', async (req, res) => {
         throw new Error('Empty response from OpenAI');
       }
     } catch (apiError) {
-      console.error('OpenAI API error, using fallback plan:', apiError);
-      return res.json(generateFallbackPlan(fitnessLevel, daysPerWeek));
+      console.error('OpenAI API error during plan generation:', apiError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to generate training plan from OpenAI.',
+        details: apiError.message || 'Unknown error during OpenAI API call.'
+      });
     }
     
     // Return the training plan

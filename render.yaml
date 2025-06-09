@@ -2,19 +2,35 @@ services:
   - type: web
     name: hiking-training-planner-api
     env: node
+    region: london  # Choose the region closest to your users
     buildCommand: npm install
     startCommand: node server.js
-    plan: free  # or 'starter', 'standard', 'plus' depending on your needs
+    plan: free
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: NODE_VERSION
-        value: 18  # Match your local Node.js version
+        value: 18
+      - key: OPENAI_API_KEY
+        sync: false  # Will be set in Render dashboard
     healthCheckPath: /health
     autoDeploy: true
+    envKeyFormat: camel
+    build:
+      cacheKey: v1
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: /$1
+    scaling:
+      maxInstances: 1
+      minInstances: 0  # Scale to zero when not in use (free tier)
+      targetCPU: 70
+      targetMemory: 70
     
-    # Add your OpenAI API key in the Render dashboard's environment variables
-    # Also add VITE_API_URL with your Render URL (e.g., https://hiking-training-planner.onrender.com)
-    # in your frontend deployment's environment variables
+    # Required environment variables to set in Render dashboard:
+    # - OPENAI_API_KEY: Your OpenAI API key
+    # - NODE_ENV: production (already set above)
+    # - PORT: 10000 (already set above)

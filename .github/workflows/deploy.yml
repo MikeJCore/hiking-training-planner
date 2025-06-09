@@ -1,0 +1,164 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# Environment variables available to all jobs and steps in this workflow
+env:
+  NODE_VERSION: '18.x'
+  NPM_VERSION: '9.x'
+  VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://hiking-training-planner-api.onrender.com' }}
+  NODE_ENV: 'production'
+
+# Jobs can run in parallel if they don't depend on each other
+jobs:
+  # Lint and test the codebase
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linter
+      run: npm run lint
+    
+    - name: Run tests
+      run: npm test -- --watchAll=false --passWithNoTests
+      env:
+        NODE_ENV: test
+        CI: true
+
+  # Build the frontend
+  build-frontend:
+    name: Build Frontend
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build production assets
+      run: npm run build
+      env:
+        NODE_ENV: production
+        VITE_API_URL: ${{ env.VITE_API_URL }}
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: dist/
+        retention-days: 5
+
+  # Deploy to Netlify (frontend)
+  deploy-netlify:
+    name: Deploy to Netlify
+    needs: build-frontend
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-build
+        path: dist
+    
+    - name: Deploy to Netlify
+      uses: nwtgck/actions-netlify@v2.0
+      with:
+        publish-dir: './dist'
+        production-deploy: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: 'Deploy ${{ github.sha }}'
+        enable-pull-request-comment: false
+        enable-commit-comment: false
+        overwrites-pull-request-comment: true
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+    
+    - name: Notify Slack on Success
+      if: success()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_TITLE: 'Frontend Deployment Successful 🚀'
+        SLACK_MESSAGE: 'Successfully deployed frontend to Netlify from ${{ github.ref }}\nCommit: ${{ github.sha }}'
+        SLACK_COLOR: 'good'
+
+  # Deploy to Render (backend)
+  # Note: Render automatically deploys when changes are pushed to the main branch
+  # This job is just for running tests and notifications
+  verify-render:
+    name: Verify Backend
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install dependencies
+      run: npm ci --production=false
+    
+    - name: Run backend tests
+      run: npm test -- --watchAll=false --passWithNoTests
+      env:
+        NODE_ENV: test
+        CI: true
+    
+    - name: Notify Slack on Success
+      if: success()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_TITLE: 'Backend Tests Passed ✅'
+        SLACK_MESSAGE: 'Backend tests passed for ${{ github.ref }}\nRender will automatically deploy the changes.'
+        SLACK_COLOR: 'good'
+
+  # Notify on failure for any job
+  notify-failure:
+    name: Notify on Failure
+    if: failure()
+    needs: [test, build-frontend, deploy-netlify, verify-render]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Notify Slack on Failure
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_TITLE: 'Deployment Failed ❌'
+        SLACK_MESSAGE: 'Deployment failed for ${{ github.ref }}\nWorkflow: ${{ github.workflow }}\nJob: ${{ github.job }}'
+        SLACK_COLOR: 'danger'
