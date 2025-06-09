@@ -25,15 +25,25 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 app.use(helmet());
 
 // Temporarily allow all origins for debugging CORS
-app.use(cors());
+console.log('Attempting to apply permissive CORS middleware...');
+app.use(cors((req, callback) => {
+  const corsOptions = { origin: true, credentials: true }; // Allow all origins
+  console.log(`CORS middleware invoked for origin: ${req.header('Origin')}`);
+  callback(null, corsOptions);
+}));
+console.log('Permissive CORS middleware applied.');
 
 // Explicitly handle OPTIONS requests for all routes
 app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  console.log(`OPTIONS request received for path: ${req.path}, from origin: ${req.headers.origin}`);
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*'); // Reflect origin or allow all
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  console.log('Responding to OPTIONS request with headers:', res.getHeaders());
   res.sendStatus(200);
 });
+console.log('OPTIONS * handler configured.');
 
 // Log all requests
 app.use((req, res, next) => {
