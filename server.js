@@ -24,22 +24,22 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 // Security headers
 app.use(helmet());
 
-// Configure CORS
-const allowedOrigins = [
-  'https://hiking-training-planner.netlify.app',
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://localhost:5001'
-];
-
+// Enable CORS with specific configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://hiking-training-planner.netlify.app',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5001'
+    ];
+    
     // Allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-      console.error(msg);
+      console.error(`[${new Date().toISOString()}] ${msg}`);
       return callback(new Error(msg), false);
     }
     return callback(null, true);
@@ -47,31 +47,21 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+  maxAge: 600 // Cache preflight request for 10 minutes
 };
 
-// Enable CORS with the specified options
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Log CORS requests for debugging
+// Log all requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin}`);
   next();
 });
 
-// Explicitly handle OPTIONS requests for all routes to ensure headers are set
-console.log(`[${new Date().toISOString()}] Configuring OPTIONS * preflight handler...`);
-app.options('*', (req, res) => {
-  console.log(`[${new Date().toISOString()}] OPTIONS preflight request received for: ${req.originalUrl} (Origin: ${req.headers.origin})`);
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*'); // Reflect origin or allow all
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-  // Ensure all necessary headers are listed, especially Content-Type and Authorization if used
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  console.log(`[${new Date().toISOString()}] Responding to OPTIONS preflight for ${req.originalUrl} with headers:`, JSON.stringify(res.getHeaders()));
-  res.sendStatus(200); // OK status for preflight
-});
-console.log(`[${new Date().toISOString()}] OPTIONS * preflight handler configured.`);
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Log all requests
 app.use((req, res, next) => {
