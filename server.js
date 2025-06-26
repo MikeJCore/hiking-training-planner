@@ -25,15 +25,15 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = [
+  'https://hiking-training-planner.netlify.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5001'
+];
+
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      'https://hiking-training-planner.netlify.app',
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5001'
-    ];
-    
     // Allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
 
