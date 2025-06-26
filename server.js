@@ -65,7 +65,6 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-
 // Log all requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin}`);
@@ -147,7 +146,6 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
-
 
 // Middleware
 app.use(cors());
@@ -847,3 +845,15 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`Server is running on http://${HOST}:${PORT}`);
   });
 }
+
+app.use((req, res, next) => {
+  // Log all incoming headers
+  console.log('[Headers]', req.headers);
+
+  // Manually set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  next();
+});
