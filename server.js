@@ -65,6 +65,15 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
+// Explicitly handle OPTIONS for /api/generate-plan
+app.options('/api/generate-plan', (req, res) => {
+  console.log('Handling OPTIONS for /api/generate-plan');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(204).end();
+});
+
 // OPTIONS handler
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
