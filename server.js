@@ -24,28 +24,54 @@ const PORT = process.env.PORT || 10000; // Default to Render's port
 // Security headers
 app.use(helmet());
 
-// Temporarily allow all origins for debugging CORS
-console.log(`[${new Date().toISOString()}] Configuring permissive CORS middleware...`);
-app.use(cors((req, callback) => {
-  const corsOptions = { origin: true, credentials: true }; // Dynamically allow all origins
-  console.log(`[${new Date().toISOString()}] CORS middleware invoked for: ${req.method} ${req.originalUrl} from origin: ${req.header('Origin')}`);
-  callback(null, corsOptions);
-}));
-console.log(`[${new Date().toISOString()}] Permissive CORS middleware configured.`);
+// Configure CORS
+const allowedOrigins = [
+  'https://hiking-training-planner.netlify.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5001'
+];
 
-// Explicitly handle OPTIONS requests for all routes
-console.log(`[${new Date().toISOString()}] Configuring OPTIONS * handler...`);
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+      console.error(msg);
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
+};
+
+// Enable CORS with the specified options
+app.use(cors(corsOptions));
+
+// Log CORS requests for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+  next();
+});
+
+// Explicitly handle OPTIONS requests for all routes to ensure headers are set
+console.log(`[${new Date().toISOString()}] Configuring OPTIONS * preflight handler...`);
 app.options('*', (req, res) => {
-  console.log(`[${new Date().toISOString()}] OPTIONS request received for path: ${req.path}, from origin: ${req.headers.origin}`);
-  // Set CORS headers dynamically based on request or allow all as fallback
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*'); 
+  console.log(`[${new Date().toISOString()}] OPTIONS preflight request received for: ${req.originalUrl} (Origin: ${req.headers.origin})`);
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*'); // Reflect origin or allow all
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  // Ensure all necessary headers are listed, especially Content-Type and Authorization if used
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
-  console.log(`[${new Date().toISOString()}] Responding to OPTIONS request for ${req.path} with headers:`, JSON.stringify(res.getHeaders()));
-  res.sendStatus(200);
+  console.log(`[${new Date().toISOString()}] Responding to OPTIONS preflight for ${req.originalUrl} with headers:`, JSON.stringify(res.getHeaders()));
+  res.sendStatus(200); // OK status for preflight
 });
-console.log(`[${new Date().toISOString()}] OPTIONS * handler configured.`);
+console.log(`[${new Date().toISOString()}] OPTIONS * preflight handler configured.`);
 
 // Log all requests
 app.use((req, res, next) => {
