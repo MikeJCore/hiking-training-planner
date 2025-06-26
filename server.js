@@ -23,6 +23,7 @@ const __dirname = path.dirname(__filename);
 
 // Initialize Express app
 const app = express();
+app.set('trust proxy', 1); // Trust Render's reverse proxy
 const PORT = process.env.PORT || 10000; // Default to Render's port
 
 // Security headers
