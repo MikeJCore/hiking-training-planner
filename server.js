@@ -26,7 +26,7 @@ const app = express();
 const PORT = process.env.PORT || 10000; // Default to Render's port
 
 // Security headers
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // CORS configuration
 const allowedOrigins = [
@@ -58,8 +58,6 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
 
 // Log all requests
 app.use((req, res, next) => {
