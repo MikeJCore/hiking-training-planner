@@ -17,6 +17,10 @@ import { StatusCodes } from 'http-status-codes';
 // Load environment variables
 dotenv.config();
 
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 10000; // Default to Render's port
@@ -139,9 +143,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Middleware
 app.use(cors());
